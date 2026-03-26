@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Handwritten Digit Recognition – Snehal Ghadge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0b0c10;--surface:#13141a;--card:#1a1b24;--card2:#1f2030;--border:#2a2c3e;--border2:#363850;--accent:#7c6fff;--accent2:#ff6b8a;--green:#3de8a0;--text:#e8e9f0;--muted:#7b7e9a;--mono:'JetBrains Mono',monospace;--sans:'Space Grotesk',sans-serif}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden}
+body{background:radial-gradient(ellipse 70% 50% at 15% 5%,rgba(124,111,255,.1) 0%,transparent 65%),radial-gradient(ellipse 50% 40% at 85% 95%,rgba(255,107,138,.07) 0%,transparent 60%),var(--bg);min-height:100vh}
+.header{display:flex;align-items:center;justify-content:space-between;padding:20px 36px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;background:rgba(11,12,16,.85);backdrop-filter:blur(20px)}
+.brand{display:flex;align-items:center;gap:14px}
+.brand-orb{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 24px rgba(124,111,255,.35)}
+.brand-name{font-size:1.15rem;font-weight:700;letter-spacing:-.3px}
+.brand-tagline{font-size:.72rem;color:var(--muted);font-family:var(--mono);margin-top:2px}
+.header-badges{display:flex;gap:8px}
+.hbadge{font-family:var(--mono);font-size:.68rem;padding:5px 12px;border-radius:20px;border:1px solid}
+.hbadge.green{color:var(--green);border-color:rgba(61,232,160,.3);background:rgba(61,232,160,.07)}
+.hbadge.purple{color:var(--accent);border-color:rgba(124,111,255,.3);background:rgba(124,111,255,.07)}
+.main-wrap{display:grid;grid-template-columns:1fr 380px;gap:0;max-width:1300px;margin:0 auto;padding:32px 36px}
+@media(max-width:900px){.main-wrap{grid-template-columns:1fr;padding:20px 16px}.header{padding:16px 20px}}
+.left-col{display:flex;flex-direction:column;gap:24px;padding-right:32px;border-right:1px solid var(--border)}
+@media(max-width:900px){.left-col{padding-right:0;border-right:none}}
+.right-col{display:flex;flex-direction:column;gap:20px;padding-left:32px}
+@media(max-width:900px){.right-col{padding-left:0}}
+.section-label{font-size:.7rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-family:var(--mono);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.canvas-panel{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:28px;position:relative;overflow:hidden}
+.canvas-panel::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(124,111,255,.12),transparent 70%);pointer-events:none}
+.canvas-title{font-size:1.3rem;font-weight:700;margin-bottom:6px}
+.canvas-sub{font-size:.85rem;color:var(--muted);margin-bottom:22px}
+.canvas-wrap{display:flex;flex-direction:column;align-items:center;gap:18px}
+#myCanvas{border:2px solid var(--border);border-radius:18px;cursor:crosshair;background:#0a0b10;touch-action:none;display:block;width:300px;height:300px;transition:border-color .2s,box-shadow .2s}
+#myCanvas:hover{border-color:rgba(124,111,255,.5)}
+#myCanvas.active{border-color:var(--accent);box-shadow:0 0 30px rgba(124,111,255,.2)}
+.stroke-controls{display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:var(--card2);border-radius:12px;border:1px solid var(--border)}
+.stroke-lbl{font-size:.75rem;color:var(--muted);font-family:var(--mono);white-space:nowrap}
+.stroke-btns{display:flex;gap:6px}
+.sbtn{width:34px;height:34px;border-radius:10px;border:1px solid var(--border2);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.sbtn:hover{border-color:var(--accent);background:rgba(124,111,255,.1)}
+.sbtn.on{border-color:var(--accent);background:rgba(124,111,255,.18)}
+.sdot{background:var(--text);border-radius:50%;flex-shrink:0}
+.btns{display:flex;gap:10px;width:100%}
+.btn{flex:1;padding:13px 18px;border-radius:13px;border:none;cursor:pointer;font-family:var(--sans);font-size:.92rem;font-weight:600;transition:all .15s}
+.btn-predict{background:linear-gradient(135deg,var(--accent),#a090ff);color:#fff;box-shadow:0 4px 20px rgba(124,111,255,.3)}
+.btn-predict:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(124,111,255,.4)}
+.btn-predict:disabled{opacity:.5;transform:none;cursor:not-allowed}
+.btn-clear{background:var(--card2);color:var(--muted);border:1px solid var(--border2)}
+.btn-clear:hover{background:var(--border);color:var(--text)}
+.result-panel{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:28px;position:relative;overflow:hidden}
+.result-panel::after{content:'';position:absolute;bottom:-40px;left:-40px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(61,232,160,.07),transparent 70%);pointer-events:none}
+.result-digit-wrap{display:flex;align-items:center;justify-content:center;height:160px;border-radius:18px;background:linear-gradient(135deg,rgba(124,111,255,.06) 0%,rgba(255,107,138,.04) 100%);border:1px solid rgba(124,111,255,.15);margin-bottom:22px;position:relative;overflow:hidden}
+.result-digit{font-size:96px;font-weight:700;font-family:var(--mono);color:var(--accent);line-height:1;transition:all .3s cubic-bezier(.34,1.56,.64,1)}
+.result-digit.pop{animation:bigpop .45s cubic-bezier(.34,1.56,.64,1)}
+@keyframes bigpop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.result-empty{font-size:.9rem;color:var(--muted)}
+.result-glow{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(124,111,255,.18),transparent 65%);opacity:0;transition:opacity .5s}
+.result-glow.show{opacity:1}
+.conf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.conf-lbl{font-size:.78rem;color:var(--muted);font-family:var(--mono)}
+.conf-val{font-size:.78rem;color:var(--green);font-family:var(--mono);font-weight:600}
+.conf-track{height:8px;background:var(--card2);border-radius:999px;overflow:hidden;margin-bottom:22px}
+.conf-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:999px;width:0%;transition:width .6s cubic-bezier(.16,1,.3,1)}
+.top3-lbl{font-size:.7rem;color:var(--muted);font-family:var(--mono);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px}
+.top3-list{display:flex;flex-direction:column;gap:9px}
+.t3row{display:flex;align-items:center;gap:12px}
+.t3dig{font-family:var(--mono);font-size:1.05rem;font-weight:700;width:18px;text-align:center}
+.t3bg{flex:1;height:6px;background:var(--card2);border-radius:999px;overflow:hidden}
+.t3bar{height:100%;border-radius:999px;background:rgba(124,111,255,.4);width:0%;transition:width .5s cubic-bezier(.16,1,.3,1)}
+.t3bar.top{background:linear-gradient(90deg,var(--accent),var(--green))}
+.t3pct{font-family:var(--mono);font-size:.75rem;color:var(--muted);width:40px;text-align:right}
+.stats-panel,.pipeline-panel,.tech-panel{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-box{background:var(--surface);border-radius:12px;padding:13px 15px;border:1px solid var(--border);transition:border-color .2s}
+.stat-box:hover{border-color:var(--border2)}
+.stat-lbl{font-size:.65rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-family:var(--mono);margin-bottom:5px}
+.stat-val{font-size:1rem;font-weight:700}
+.stat-val.g{color:var(--green)}.stat-val.p{color:var(--accent)}.stat-val.sm{font-size:.82rem}
+.pipe-steps{display:flex;flex-direction:column}
+.pipe-step{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--border)}
+.pipe-step:last-child{border-bottom:none}
+.pipe-num{width:30px;height:30px;flex-shrink:0;border-radius:9px;background:rgba(124,111,255,.12);border:1px solid rgba(124,111,255,.25);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--accent);font-family:var(--mono);margin-top:1px}
+.pipe-name{font-size:.88rem;font-weight:600;margin-bottom:3px}
+.pipe-desc{font-size:.78rem;color:var(--muted);line-height:1.5}
+.pipe-tag{display:inline-block;font-size:.65rem;font-family:var(--mono);padding:2px 7px;border-radius:6px;margin-top:4px;background:rgba(124,111,255,.1);color:var(--accent);border:1px solid rgba(124,111,255,.2)}
+.tech-chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:.75rem;font-family:var(--mono);padding:6px 12px;border-radius:10px;border:1px solid var(--border2);background:var(--surface);color:var(--muted);transition:all .15s;cursor:default}
+.chip:hover{border-color:var(--accent);color:var(--accent);background:rgba(124,111,255,.08)}
+footer{text-align:center;padding:24px 36px;border-top:1px solid var(--border);font-size:.78rem;color:var(--muted);font-family:var(--mono);margin-top:8px}
+footer span{color:var(--accent)}
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="brand">
+    <div class="brand-orb">🧠</div>
+    <div><div class="brand-name">Digit Recognizer</div><div class="brand-tagline">Snehal Ghadge · ML Project</div></div>
+  </div>
+  <div class="header-badges">
+    <div class="hbadge green">98.33% Accuracy</div>
+    <div class="hbadge purple">KNN · GridSearchCV</div>
+  </div>
+</header>
+<div class="main-wrap">
+  <div class="left-col">
+    <div class="canvas-panel">
+      <div class="canvas-title">Draw a Digit</div>
+      <div class="canvas-sub">Sketch any digit 0–9 on the canvas below, then hit Predict</div>
+      <div class="canvas-wrap">
+        <canvas id="myCanvas" width="300" height="300"></canvas>
+        <div class="stroke-controls">
+          <span class="stroke-lbl">Brush size</span>
+          <div class="stroke-btns">
+            <button class="sbtn" onclick="setStroke(this,16)"><div class="sdot" style="width:6px;height:6px"></div></button>
+            <button class="sbtn on" onclick="setStroke(this,26)"><div class="sdot" style="width:12px;height:12px"></div></button>
+            <button class="sbtn" onclick="setStroke(this,38)"><div class="sdot" style="width:18px;height:18px"></div></button>
+          </div>
+          <div style="margin-left:auto;font-size:.72rem;color:var(--muted);font-family:var(--mono)" id="strokeLabel">26px</div>
+        </div>
+        <div class="btns">
+          <button class="btn btn-predict" id="predictBtn" onclick="predict()">⚡ Predict Digit</button>
+          <button class="btn btn-clear" onclick="clearCanvas()">🗑 Clear</button>
+        </div>
+      </div>
+    </div>
+    <div class="result-panel">
+      <div class="section-label">Prediction Output</div>
+      <div class="result-digit-wrap">
+        <div class="result-glow" id="resultGlow"></div>
+        <div class="result-digit" id="resultDigit"><span class="result-empty">Draw &amp; predict</span></div>
+      </div>
+      <div class="conf-row"><span class="conf-lbl">Confidence</span><span class="conf-val" id="confVal">—</span></div>
+      <div class="conf-track"><div class="conf-fill" id="confFill"></div></div>
+      <div class="top3-lbl">Top 3 Candidates</div>
+      <div class="top3-list" id="top3List"></div>
+    </div>
+  </div>
+  <div class="right-col">
+    <div class="stats-panel">
+      <div class="section-label">Model Statistics</div>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-lbl">Test Accuracy</div><div class="stat-val g">98.33%</div></div>
+        <div class="stat-box"><div class="stat-lbl">CV Accuracy</div><div class="stat-val g">98.54%</div></div>
+        <div class="stat-box"><div class="stat-lbl">Algorithm</div><div class="stat-val p">KNN</div></div>
+        <div class="stat-box"><div class="stat-lbl">Best K</div><div class="stat-val p" id="statK">3</div></div>
+        <div class="stat-box"><div class="stat-lbl">Features</div><div class="stat-val">784</div></div>
+        <div class="stat-box"><div class="stat-lbl">CV Folds</div><div class="stat-val">5</div></div>
+        <div class="stat-box"><div class="stat-lbl">Tuning</div><div class="stat-val sm">GridSearchCV</div></div>
+        <div class="stat-box"><div class="stat-lbl">Weights</div><div class="stat-val sm" id="statW">uniform</div></div>
+      </div>
+    </div>
+    <div class="pipeline-panel">
+      <div class="section-label">ML Pipeline</div>
+      <div class="pipe-steps">
+        <div class="pipe-step"><div class="pipe-num">1</div><div><div class="pipe-name">Canvas Input</div><div class="pipe-desc">300×300 HTML5 canvas → PNG base64</div><span class="pipe-tag">HTML Canvas API</span></div></div>
+        <div class="pipe-step"><div class="pipe-num">2</div><div><div class="pipe-name">Preprocessing</div><div class="pipe-desc">Invert → crop → 8×8 → upscale 28×28 → 784 features</div><span class="pipe-tag">NumPy · SciPy · Pillow</span></div></div>
+        <div class="pipe-step"><div class="pipe-num">3</div><div><div class="pipe-name">MinMax Normalise</div><div class="pipe-desc">Pixel values scaled to [0,1]</div><span class="pipe-tag">sklearn.preprocessing</span></div></div>
+        <div class="pipe-step"><div class="pipe-num">4</div><div><div class="pipe-name">KNN Classification</div><div class="pipe-desc">k=3 nearest neighbours · Euclidean distance</div><span class="pipe-tag">KNeighborsClassifier</span></div></div>
+        <div class="pipe-step"><div class="pipe-num">5</div><div><div class="pipe-name">Top-3 Output</div><div class="pipe-desc">Prediction + confidence probabilities</div><span class="pipe-tag">predict_proba()</span></div></div>
+      </div>
+    </div>
+    <div class="tech-panel">
+      <div class="section-label">Tech Stack</div>
+      <div class="tech-chips">
+        <div class="chip">Python 3</div><div class="chip">scikit-learn</div><div class="chip">NumPy</div>
+        <div class="chip">SciPy</div><div class="chip">Pillow</div><div class="chip">Flask</div>
+        <div class="chip">GridSearchCV</div><div class="chip">K-Fold CV</div><div class="chip">HTML5 Canvas</div>
+      </div>
+    </div>
+  </div>
+</div>
+<footer>Built by <span>Snehal Ghadge</span> · Handwritten Digit Recognition · KNN + GridSearchCV + 5-Fold CV · 98.33% Test Accuracy</footer>
+<script>
+const canvas=document.getElementById('myCanvas'),ctx=canvas.getContext('2d');
+let drawing=false,strokeSize=26,lastX,lastY;
+ctx.fillStyle='#0a0b10';ctx.fillRect(0,0,300,300);
+ctx.strokeStyle='#ffffff';ctx.lineWidth=26;ctx.lineCap='round';ctx.lineJoin='round';
+function gp(e){const r=canvas.getBoundingClientRect(),sx=canvas.width/r.width,sy=canvas.height/r.height,s=e.touches?e.touches[0]:e;return[(s.clientX-r.left)*sx,(s.clientY-r.top)*sy]}
+canvas.addEventListener('mousedown',e=>{drawing=true;canvas.classList.add('active');[lastX,lastY]=gp(e)});
+canvas.addEventListener('mousemove',e=>{if(!drawing)return;let[x,y]=gp(e);ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(x,y);ctx.stroke();[lastX,lastY]=[x,y]});
+canvas.addEventListener('mouseup',()=>{drawing=false;canvas.classList.remove('active')});
+canvas.addEventListener('mouseleave',()=>{drawing=false;canvas.classList.remove('active')});
+canvas.addEventListener('touchstart',e=>{e.preventDefault();drawing=true;[lastX,lastY]=gp(e)});
+canvas.addEventListener('touchmove',e=>{e.preventDefault();if(!drawing)return;let[x,y]=gp(e);ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(x,y);ctx.stroke();[lastX,lastY]=[x,y]});
+canvas.addEventListener('touchend',()=>{drawing=false});
+function setStroke(btn,sz){strokeSize=sz;ctx.lineWidth=sz;document.querySelectorAll('.sbtn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');document.getElementById('strokeLabel').textContent=sz+'px'}
+function clearCanvas(){ctx.fillStyle='#0a0b10';ctx.fillRect(0,0,300,300);document.getElementById('resultDigit').innerHTML='<span class="result-empty">Draw &amp; predict</span>';document.getElementById('confVal').textContent='—';document.getElementById('confFill').style.width='0%';document.getElementById('top3List').innerHTML='';document.getElementById('resultGlow').classList.remove('show')}
+async function predict(){
+  const d=ctx.getImageData(0,0,300,300).data,b=d.filter((_,i)=>i%4!==3&&d[i]>40).length;
+  if(b<300){alert('Please draw a digit first!');return}
+  const btn=document.getElementById('predictBtn');btn.textContent='⏳ Predicting...';btn.disabled=true;
+  try{
+    const res=await fetch('/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:canvas.toDataURL('image/png')})});
+    const data=await res.json();
+    if(data.error){alert('Error: '+data.error);return}
+    const rd=document.getElementById('resultDigit');rd.innerHTML=data.prediction;rd.classList.remove('pop');void rd.offsetWidth;rd.classList.add('pop');
+    document.getElementById('resultGlow').classList.add('show');
+    document.getElementById('confVal').textContent=data.confidence+'%';
+    setTimeout(()=>document.getElementById('confFill').style.width=data.confidence+'%',50);
+    const t3=document.getElementById('top3List');t3.innerHTML='';
+    data.top3.forEach((item,i)=>{t3.innerHTML+=`<div class="t3row"><div class="t3dig">${item.digit}</div><div class="t3bg"><div class="t3bar${i===0?' top':''}" id="b${i}" style="width:0%"></div></div><div class="t3pct">${item.confidence}%</div></div>`});
+    data.top3.forEach((item,i)=>setTimeout(()=>{const b=document.getElementById('b'+i);if(b)b.style.width=item.confidence+'%'},120+i*60));
+  }catch(e){alert('Could not reach server. Run: python app.py')}
+  finally{btn.textContent='⚡ Predict Digit';btn.disabled=false}
+}
+fetch('/stats').then(r=>r.json()).then(d=>{const k=document.getElementById('statK'),w=document.getElementById('statW');if(k)k.textContent=d.best_k||3;if(w)w.textContent=d.weights||'uniform'}).catch(()=>{});
+</script>
+</body>
+</html>
